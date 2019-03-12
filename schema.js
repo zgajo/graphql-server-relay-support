@@ -9,41 +9,14 @@ const {
   GraphQLList
 } = require("graphql");
 const {
-  nodeDefinitions,
-  fromGlobalId,
   globalIdField,
   connectionDefinitions,
   connectionFromPromisedArray,
   connectionArgs
 } = require("graphql-relay");
 
-const getObjectById = (type, id) => {
-  const types = {
-    user: getUserById
-  };
-
-  return types[type](id);
-};
-
-const { nodeInterface, nodeField } = nodeDefinitions(
-  async globalId => {
-    const { type, id } = fromGlobalId(globalId);
-
-    const obj = await getObjectById(type.toLowerCase(), id);
-
-    return {
-      ...obj,
-      type
-    };
-  },
-  object => {
-    if (object.type === "User") {
-      return UserType;
-    }
-
-    return null;
-  }
-);
+const { nodeInterface, nodeField } = require("./schema-relay-components");
+const { getUserById } = require("./schema-helpers");
 
 const CompanyType = new GraphQLObjectType({
   name: "Company",
@@ -81,6 +54,8 @@ const UserType = new GraphQLObjectType({
   interfaces: [nodeInterface]
 });
 
+exports.UserType = UserType;
+
 const { connectionType: UserConnection } = connectionDefinitions({
   nodeType: UserType,
   connectionFields: () => ({
@@ -93,9 +68,6 @@ const { connectionType: UserConnection } = connectionDefinitions({
     }
   })
 });
-
-const getUserById = id =>
-  axios.get(`http://localhost:3000/users/${id}`).then(res => res.data);
 
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
